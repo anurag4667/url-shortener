@@ -1,0 +1,52 @@
+# ======================
+# Go
+# ======================
+/bin/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# ======================
+# Go build cache
+# ======================
+/vendor/
+/coverage.out
+
+# ======================
+# Environment files
+# ======================
+.env
+
+# ======================
+# Config overrides (keep example only)
+# ======================
+config/*.local.yaml
+config/*.dev.yaml
+
+# ======================
+# Docker
+# ======================
+docker-compose.override.yml
+
+# ======================
+# MySQL data (docker volume bind, if any)
+# ======================
+mysql_data/
+
+# ======================
+# IDE / OS
+# ======================
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# ======================
+# Logs
+# ======================
+*.log

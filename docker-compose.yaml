@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mysql
+    volumes:
+      - ./config:/app/config
+    restart: always
+
+  mysql:
+    image: mysql:latest
+    container_name: url_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345678
+      MYSQL_DATABASE: url_shortener
+    ports:
+      - "33306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
