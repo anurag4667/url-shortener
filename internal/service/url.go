@@ -1,6 +1,8 @@
 package service
 
 import (
+	"log"
+
 	"github.com/anurag4667/url-shortener/internal/database"
 	"github.com/anurag4667/url-shortener/internal/short"
 )
@@ -24,7 +26,9 @@ func (s *URLService) Shorten(original string) (string, error) {
 		if err == nil {
 			return id, nil
 		}
-		// collision → retry
+
+		log.Println(err.Error(), " - retrying...")
+
 	}
 }
 

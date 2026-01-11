@@ -1,16 +1,4 @@
-version: "3.9"
-
 services:
-  api:
-    build: .
-    ports:
-      - "4000:4000"
-    depends_on:
-      - mysql
-    volumes:
-      - ./config:/app/config
-    restart: always
-
   mysql:
     image: mysql:latest
     container_name: url_mysql
@@ -18,10 +6,25 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: 12345678
       MYSQL_DATABASE: url_shortener
-    ports:
-      - "33306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./config:/app/config
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: always
 
 volumes:
   mysql_data:
