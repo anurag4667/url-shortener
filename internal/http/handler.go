@@ -2,9 +2,11 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/anurag4667/url-shortener/internal/redis"
 	"github.com/anurag4667/url-shortener/internal/service"
 )
 
@@ -44,8 +46,22 @@ func (h *Handler) Shorten(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetOriginalURL(w http.ResponseWriter, r *http.Request, id string) {
+	fmt.Println("GetOriginalURL called with ID:", id)
+
+	cachedURL, err := redis.GetURL(id)
+
+	if err == nil {
+		fmt.Println("Cache hit:", cachedURL)
+		json.NewEncoder(w).Encode(map[string]string{
+			"original_url": cachedURL,
+			"source":       "cache",
+		})
+		return
+	}
+
 	url, ok, err := h.service.Resolve(id)
 	if err != nil {
+		fmt.Println("DB resolve error:", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
@@ -58,7 +74,10 @@ func (h *Handler) GetOriginalURL(w http.ResponseWriter, r *http.Request, id stri
 		return
 	}
 
+	_ = redis.SetURL(id, url)
+
 	json.NewEncoder(w).Encode(map[string]string{
 		"original_url": url,
+		"source":       "database",
 	})
 }

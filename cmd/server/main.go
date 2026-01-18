@@ -8,6 +8,7 @@ import (
 
 	"github.com/anurag4667/url-shortener/internal/database"
 	httpx "github.com/anurag4667/url-shortener/internal/http"
+	"github.com/anurag4667/url-shortener/internal/redis"
 	"github.com/anurag4667/url-shortener/internal/service"
 	"github.com/spf13/viper"
 )
@@ -20,6 +21,16 @@ func loadConfig() {
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
+
+	viper.SetDefault("redis.host", "localhost")
+	viper.SetDefault("redis.port", 6379)
+	viper.SetDefault("redis.password", "")
+	viper.SetDefault("redis.db", 0)
+
+	viper.BindEnv("redis.host", "REDIS_HOST")
+	viper.BindEnv("redis.port", "REDIS_PORT")
+	viper.BindEnv("redis.password", "REDIS_PASSWORD")
+	viper.BindEnv("redis.db", "REDIS_DB")
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatal("cannot read config:", err)
@@ -44,6 +55,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	redis.InitRedis()
 
 	service := service.New(store)
 	handler := httpx.New(service)

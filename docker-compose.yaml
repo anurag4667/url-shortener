@@ -15,8 +15,19 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7
+    container_name: url_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
   api:
     build: .
+    container_name: url_api
     ports:
       - "4000:4000"
     volumes:
@@ -24,7 +35,15 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_started
     restart: always
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
 
 volumes:
   mysql_data:
+  redis_data:
