@@ -1,21 +1,24 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/anurag4667/url-shortener/internal/kafka/producer"
 	"github.com/anurag4667/url-shortener/internal/redis"
 	"github.com/anurag4667/url-shortener/internal/service"
 )
 
 type Handler struct {
-	service *service.URLService
+	service  *service.URLService
+	producer *producer.ClickProducer
 }
 
-func New(service *service.URLService) *Handler {
-	return &Handler{service: service}
+func New(service *service.URLService, producer *producer.ClickProducer) *Handler {
+	return &Handler{service: service, producer: producer}
 }
 
 func (h *Handler) Shorten(w http.ResponseWriter, r *http.Request) {
@@ -52,6 +55,9 @@ func (h *Handler) GetOriginalURL(w http.ResponseWriter, r *http.Request, id stri
 
 	if err == nil {
 		fmt.Println("Cache hit:", cachedURL)
+
+		go h.producer.Publish(context.Background(), id, id)
+
 		json.NewEncoder(w).Encode(map[string]string{
 			"original_url": cachedURL,
 			"source":       "cache",
@@ -75,6 +81,8 @@ func (h *Handler) GetOriginalURL(w http.ResponseWriter, r *http.Request, id stri
 	}
 
 	_ = redis.SetURL(id, url)
+
+	go h.producer.Publish(context.Background(), id, id)
 
 	json.NewEncoder(w).Encode(map[string]string{
 		"original_url": url,

@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/anurag4667/url-shortener/internal/database"
 	httpx "github.com/anurag4667/url-shortener/internal/http"
+	"github.com/anurag4667/url-shortener/internal/kafka/producer"
 	"github.com/anurag4667/url-shortener/internal/redis"
 	"github.com/anurag4667/url-shortener/internal/service"
 	"github.com/spf13/viper"
@@ -35,13 +37,12 @@ func loadConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatal("cannot read config:", err)
 	}
-	log.Println("DB password:", viper.GetString("database.password"))
-
 }
 
 func main() {
 	loadConfig()
 
+	// --- Database ---
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?parseTime=true",
 		viper.GetString("database.user"),
@@ -55,12 +56,27 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// --- Redis ---
 	redis.InitRedis()
 
-	service := service.New(store)
-	handler := httpx.New(service)
+	// --- Kafka Producer ---
+	brokersEnv := os.Getenv("KAFKA_BROKERS")
+	if brokersEnv == "" {
+		brokersEnv = "localhost:9092" // fallback for local (non-docker) runs
+	}
+
+	brokers := strings.Split(brokersEnv, ",")
+
+	clickProducer := producer.NewClickProducer(brokers)
+	defer clickProducer.Close()
+
+	// --- Services & Handlers ---
+	urlService := service.New(store)
+	handler := httpx.New(urlService, clickProducer)
 	router := httpx.Register(handler)
 
+	// --- HTTP Server ---
 	port := viper.GetString("server.port")
 	log.Println("Server running on :", port)
 
