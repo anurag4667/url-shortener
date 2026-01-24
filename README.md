@@ -45,11 +45,9 @@ For the Analytics part we are just storing the clicks ,but since as per the logi
 
 to increment the counter of clicks which would mean same amount of reads and writes.
 
-The Analytics need not to be consistent tbh so they are updated Asynchronously.
+The Analytics need not to be consistent so they are updated Asynchronously.
 
-All the events of clicks are added in Kafka and then we will use a Apache Spark to perform mini batch Aggeragation of clicks and then update database
-
-every minute interval (Spark Consumer is not yet implemented so curretly in db you will see only 1 click per url)
+All the events of clicks are added in Kafka and then we will use Apache Spark to perform mini batch Aggregation of clicks and then update in the database after every minute interval (Spark Consumer is not yet been implemented so curretly in db you will see only 1 click per url)
 
 
 
